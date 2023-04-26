@@ -1,3 +1,5 @@
+import datetime
+import time
 import pandas as pd
 import numpy as np
 
@@ -34,24 +36,18 @@ def make_trend_signal(signal, length=252):
 
 
 if __name__ == '__main__':
+    
+    today = datetime.datetime.today()
+    today_ts = int(time.mktime(today.timetuple()))
 
-    url_spy = 'https://query1.finance.yahoo.com/v7/finance/download/SPY?interval=1d&events=history&includeAdjustedClose=true'
+    url_spy = f'https://query1.finance.yahoo.com/v7/finance/download/SPY?period1=1650428990&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
     df_spy = pd.read_csv(url_spy)
-    df_spy = df_spy.set_index('Date')
 
-    url_ief = 'https://query1.finance.yahoo.com/v7/finance/download/IEF?interval=1d&events=history&includeAdjustedClose=true'
+    url_ief = f'https://query1.finance.yahoo.com/v7/finance/download/IEF?period1=1650428990&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
     df_ief = pd.read_csv(url_ief)
-    df_ief = df_ief.set_index('Date')
 
-    spy = pd.read_csv('data/SPY.csv')
-    spy = spy.set_index('Date')
-    spy = pd.concat([spy, df_spy], axis=0)
-    spy.to_csv('data/SPY.csv')
-
-    ief = pd.read_csv('data/IEF.csv')
-    ief = ief.set_index('Date')
-    ief = pd.concat([ief, df_ief], axis=0)
-    ief.to_csv('data/IEF.csv')
+    spy = df_spy.set_index('Date')
+    ief = df_ief.set_index('Date')
 
     danger_spy_vol_thrs = 0.03
 
