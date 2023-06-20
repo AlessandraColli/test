@@ -66,11 +66,11 @@ if __name__ == '__main__':
     if spy_vol > danger_spy_vol_thrs:
         print(f"SPY rolling 10d volatility is above {danger_spy_vol_thrs}")
 
-    ief_signal_252 = make_trend_signal(ief['Adj Close'])
+    ief_signal_126 = make_trend_signal(ief['Adj Close'], length=126)
 
-    if ief_signal_252.iloc[-1] == 1:
+    if ief_signal_126.iloc[-1] == 1:
         print("Low yields regime")
-    elif ief_signal_252.iloc[-1] == -1:
+    elif ief_signal_126.iloc[-1] == -1:
         print("High yields regime")
     else:
         print("Neutral regime")
