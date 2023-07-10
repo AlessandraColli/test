@@ -40,18 +40,29 @@ if __name__ == '__main__':
     today = datetime.datetime.today()
     today_ts = int(time.mktime(today.timetuple()))
 
-    url_spy = f'https://query1.finance.yahoo.com/v7/finance/download/SPY?period1=1650428990&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
+    today_str = today.strftime('%Y-%m-%d')
+
+    start_date = today - datetime.timedelta(days=400)
+    start_ts = int(time.mktime(start_date.timetuple()))
+
+    url_spy = f'https://query1.finance.yahoo.com/v7/finance/download/SPY?period1={start_ts}&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
     df_spy = pd.read_csv(url_spy)
 
-    url_ief = f'https://query1.finance.yahoo.com/v7/finance/download/IEF?period1=1650428990&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
+    url_ief = f'https://query1.finance.yahoo.com/v7/finance/download/IEF?period1={start_ts}&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
     df_ief = pd.read_csv(url_ief)
 
-    url_shy = f'https://query1.finance.yahoo.com/v7/finance/download/SHY?period1=1650428990&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
+    url_shy = f'https://query1.finance.yahoo.com/v7/finance/download/SHY?period1={start_ts}&period2={today_ts}&interval=1d&events=history&includeAdjustedClose=true'
     df_shy = pd.read_csv(url_ief)
 
     spy = df_spy.set_index('Date')
-    ief = df_ief.set_index('Date')
-    shy = df_shy.set_index('Date')
+
+    dates = spy.index
+    if today_str in dates:
+        dates = dates.drop(today_str)
+        spy = spy.reindex(dates)
+
+    ief = df_ief.set_index('Date').reindex(dates)
+    shy = df_shy.set_index('Date').reindex(dates)
 
     spy_price = spy['Adj Close'].fillna(method='ffill')
     ief_price = ief['Adj Close'].fillna(method='ffill')
@@ -94,4 +105,24 @@ if __name__ == '__main__':
     if combined_risk_signal.iloc[-1] == 0:
         print("Combined risk off is active")
 
+    # vwap
+    length = 5
+    vw_price = spy_price * spy['Volume']
+    vw_price_cumsum = vw_price.rolling(length).sum()
+    volume_cumsum = spy['Volume'].rolling(length).sum()
+    VWAP = vw_price_cumsum / volume_cumsum
+    offset = np.sqrt(((spy['Volume'] * ((spy_price - VWAP) ** 2)).rolling(length).sum()) / volume_cumsum)
+    signal = pd.Series(0, index=spy.index)
+    signal[spy['Adj Close'] > VWAP + offset] = -1
+    signal[spy['Adj Close'] < VWAP - offset] = 1
+    # propagate 1 and -1
+    signal = signal.replace(0, np.nan)
+    signal = signal.fillna(method='ffill')
+    # make long-only sig
+    signal = signal.replace(-1, 0).fillna(0)
+
+    if signal.iloc[-1] == 1:
+        print("VWAP signal active.")
+
     print("End of process.")
+
