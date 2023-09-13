@@ -64,9 +64,9 @@ if __name__ == '__main__':
     ief = df_ief.set_index('Date').reindex(dates)
     shy = df_shy.set_index('Date').reindex(dates)
 
-    spy_price = spy['Adj Close'].fillna(method='ffill')
-    ief_price = ief['Adj Close'].fillna(method='ffill')
-    shy_price = shy['Adj Close'].fillna(method='ffill')
+    spy_price = spy['Adj Close'].ffill()
+    ief_price = ief['Adj Close'].ffill()
+    shy_price = shy['Adj Close'].ffill()
 
     danger_spy_vol_thrs = 0.03
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     spy_vol_3m = spy_rets.rolling(63).std(ddof=0)
     vol_signal_126 = make_trend_signal(spy_vol_3m, length=126)
-    vol_signal_126 = vol_signal_126.fillna(method='ffill')
+    vol_signal_126 = vol_signal_126.ffill()
 
     risk_signal = (vol_signal_126 == -1).astype(int)
     if risk_signal.iloc[-1] == 0:
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     signal[spy['Adj Close'] < VWAP - offset] = 1
     # propagate 1 and -1
     signal = signal.replace(0, np.nan)
-    signal = signal.fillna(method='ffill')
+    signal = signal.ffill()
     # make long-only sig
     signal = signal.replace(-1, 0).fillna(0)
 
